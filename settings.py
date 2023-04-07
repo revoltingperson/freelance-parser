@@ -2,7 +2,7 @@ import os.path
 import logging
 
 
-DEBUG = True
+DEBUG = False
 
 
 error_path = os.path.join('errors', 'log.txt')

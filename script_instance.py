@@ -17,26 +17,29 @@ class ChromeLeonBet(BaseMethods):
     MORE_INFO = (By.XPATH, '//div[@class="sport-event-details-market-list sport-event-details-market-list--list-item"]')
     COEFFICIENT = 'sport-event-list-item-market__coefficient'
     TAB_STATS = 'sport-event-details-item sport-event-details-market-group__market'
-    running: bool
 
     def __init__(self):
         super().__init__()
         self.all_games_ready = []
+        self.running = False
 
     def start_browser(self, driver):
         self.driver: webdriver.Chrome = driver
         self.driver.maximize_window()
 
-    def run_script(self):
+    def run_script(self) -> bool:
         self.driver.get('https://leon.bet/ru/live/soccer')
         if self.locate_visible(self.ANCHOR, 20):
             table = self.locate_element(self.ENTIRE_TABLE)
             games = self.collect_all_cards_info(table.get_attribute('innerHTML'))
             if games:
                 self.all_games_ready = self.open_tab_for_each(games)
+                if not self.all_games_ready:
+                    return False
 
         else:
             raise TimeoutError
+        return True
 
     def collect_all_cards_info(self, table: str) -> list:
         bf4 = BeautifulSoup(table, 'lxml')
@@ -58,11 +61,12 @@ class ChromeLeonBet(BaseMethods):
 
         return all_games_stats
 
-    def open_tab_for_each(self, all_games: list) -> list:
+    def open_tab_for_each(self, all_games: list) -> list or None:
         for game in all_games:
             if not self.running:
-                self.driver.quit()
                 self.driver.close()
+                self.driver.quit()
+                return
             tab_button: WebElement
             try:
                 _, tab_button = self.locate_elements((By.XPATH, f'//a[@href="{game["href"]}"]'))
